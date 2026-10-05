@@ -1,0 +1,54 @@
+# Copyright 2026 The CAPTF Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Admin-applied, once per management cluster: the Azure credentials Secret and
+# the TerraformClusterIdentity that names it. Both are cluster-wide, so they
+# are not part of a cluster template.
+#
+#   clusterctl generate yaml --from examples/identity.yaml | kubectl apply -f -
+#
+# Every key reaches the Job as an environment variable and as a file under
+# /var/run/captf/credentials/<key> (https://captf.io/docs/user-guide/identities.html).
+# The azurerm provider reads the ARM_* variables
+# (https://registry.terraform.io/providers/hashicorp/azurerm/5.7.0/docs/guides/service_principal_client_secret).
+# README.md "Identity Secret" lists the roles the service principal needs.
+#
+# Whoever applies this must be allowed to get the Secret: the identity webhook
+# checks with a SubjectAccessReview.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "${AZURE_IDENTITY_NAME:=azure}"
+  namespace: captf-system
+type: Opaque
+stringData:
+  ARM_TENANT_ID: "${AZURE_TENANT_ID}"
+  ARM_SUBSCRIPTION_ID: "${AZURE_SUBSCRIPTION_ID}"
+  ARM_CLIENT_ID: "${AZURE_CLIENT_ID}"
+  ARM_CLIENT_SECRET: "${AZURE_CLIENT_SECRET}"
+  # The images have no Azure CLI; without this the provider would try it
+  # when the other methods fail and report that instead.
+  ARM_USE_CLI: "false"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: TerraformClusterIdentity
+metadata:
+  name: "${AZURE_IDENTITY_NAME:=azure}"
+spec:
+  secretRef:
+    name: "${AZURE_IDENTITY_NAME:=azure}"
+    namespace: captf-system
+  allowedNamespaces:
+    list:
+    - "${NAMESPACE}"
