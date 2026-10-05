@@ -6,7 +6,35 @@ The `cluster` role of the CAPTF Azure modules: the cluster-wide substrate of
 a Kubernetes cluster on Azure virtual machines. It implements the
 [`v1alpha1` cluster role](https://captf.io/docs/module-author/contract/v1alpha1/cluster.html)
 and ships as `ghcr.io/captf-io/azure-cluster`. The reasons behind every
-choice are in [DESIGN.md](DESIGN.md).
+choice are in [DESIGN.md](https://github.com/captf-io/terraform-azure-cluster/blob/main/DESIGN.md).
+
+## Usage
+
+CAPTF runs this module from the module image `ghcr.io/captf-io/azure-cluster`: set the image on
+a `TerraformCluster`'s `spec.source.image`, and the controller renders every
+input. The module is also published to the Terraform Registry as
+`captf-io/cluster/azure` and can be called directly:
+
+```hcl
+module "cluster" {
+  source  = "captf-io/cluster/azure"
+  version = "~> 0.1"
+
+  # The contract inputs the controller would render (captf_contract,
+  # captf_cluster, captf_object, captf_tags, ...; see Inputs), and any
+  # user variables.
+}
+```
+
+Called directly, the module is a CAPTF root module first:
+
+- it configures its own `provider "azurerm"` block, so the calling
+  module cannot use `count`, `for_each` or `depends_on` on it, and the
+  provider takes its credentials from the environment (see Identity
+  Secret);
+- its providers are pinned to exact versions (`versions.tf`), which the
+  calling configuration has to accept;
+- you set the `captf_*` inputs yourself.
 
 ## What it creates
 
@@ -175,7 +203,7 @@ The identity Secret holds the azurerm provider's environment variables:
 `ARM_CLIENT_SECRET` (or `ARM_CLIENT_CERTIFICATE_PATH` pointing at a file
 under `/var/run/captf/credentials/` plus `ARM_CLIENT_CERTIFICATE_PASSWORD`).
 Set `ARM_USE_CLI=false`: the images have no Azure CLI.
-[`examples/identity.yaml`](examples/identity.yaml) has one; the
+[`examples/identity.yaml`](https://github.com/captf-io/terraform-azure-cluster/blob/main/examples/identity.yaml) has one; the
 permissions it needs are under Prerequisites. The cluster lands in
 `ARM_SUBSCRIPTION_ID`, which must be the network's subscription.
 
@@ -253,7 +281,7 @@ readings: a mock provider never drops a resource on refresh.
 
 ## Examples
 
-[`examples/cluster-kubeadm.yaml`](examples/cluster-kubeadm.yaml) creates a
+[`examples/cluster-kubeadm.yaml`](https://github.com/captf-io/terraform-azure-cluster/blob/main/examples/cluster-kubeadm.yaml) creates a
 kubeadm cluster with this role, a MachineDeployment and a MachinePool. The
 smallest `spec.variables`:
 
