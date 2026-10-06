@@ -781,6 +781,16 @@ run "invalid_api_allowed_cidrs" {
   expect_failures = [var.api_allowed_cidrs]
 }
 
+run "invalid_api_allowed_cidrs_world_open" {
+  command = plan
+
+  variables {
+    api_allowed_cidrs = ["203.0.113.0/24", "0.0.0.0/0"]
+  }
+
+  expect_failures = [var.api_allowed_cidrs]
+}
+
 run "invalid_api_load_balancer_private_ip" {
   command = plan
 

@@ -60,6 +60,11 @@ variable "api_allowed_cidrs" {
     condition     = alltrue([for c in var.api_allowed_cidrs : can(cidrnetmask(c))])
     error_message = "api_allowed_cidrs must hold IPv4 CIDRs such as 203.0.113.0/24."
   }
+
+  validation {
+    condition     = alltrue([for c in var.api_allowed_cidrs : !can(cidrnetmask(c)) || tonumber(split("/", c)[1]) > 0])
+    error_message = "api_allowed_cidrs must not hold a /0 prefix such as 0.0.0.0/0: it would open the API server to the whole internet. List the networks that need access (the management cluster's egress and the nodes' NAT gateway addresses), or leave the list empty to keep the API server inside the virtual network."
+  }
 }
 
 variable "api_load_balancer_private_ip" {
