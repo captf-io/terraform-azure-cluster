@@ -303,7 +303,7 @@ names allow no dots.
 
 ### 12. Tooling
 
-Concerns how the module images are tested, not this repository: see [archived azure-modules DESIGN.md](https://github.com/captf-io/azure-modules/blob/main/DESIGN.md#12-tooling).
+Concerns how the module images are tested, not this repository: see the [module-images README](https://github.com/captf-io/module-images#developing).
 
 ## Exports (`captf.io/azure-cluster/v1`)
 
