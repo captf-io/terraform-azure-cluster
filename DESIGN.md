@@ -109,7 +109,7 @@ disks behind, instead of deleting data. The runbook step is to remove them.
   rule ports in place (adding or removing a frontend no longer forces a new
   load balancer; only zones do), so those changes would move the endpoint
   without any delete, which the first draft missed.
-  `terraform_data.api_endpoint_guard` (the pattern of openstack-modules)
+  `terraform_data.api_endpoint_guard` (the pattern of the OpenStack modules)
   records `api_load_balancer_public`, the port, the control-plane subnet and the
   private address the frontend actually got, with `ignore_changes` on its
   input, and a postcondition fails any later plan that changes them, naming
@@ -303,7 +303,7 @@ names allow no dots.
 
 ### 12. Tooling
 
-Concerns how the module images are tested, not this repository: see [azure-modules DESIGN.md](https://github.com/captf-io/azure-modules/blob/main/DESIGN.md#12-tooling).
+Concerns how the module images are tested, not this repository: see [archived azure-modules DESIGN.md](https://github.com/captf-io/azure-modules/blob/main/DESIGN.md#12-tooling).
 
 ## Exports (`captf.io/azure-cluster/v1`)
 

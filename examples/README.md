@@ -34,5 +34,4 @@ Notes:
   plane (CONVENTIONS.md section 17).
 - The manifests pin every image to a release, `v0.1.0-opentofu`: change the
   tag to the release you deploy (`vX.Y.Z-opentofu` or `vX.Y.Z-terraform`),
-  or to a digest. The moving tags (`opentofu`, `terraform`,
-  `edge-<runtime>`) are for trying things out, never for anything you keep.
+  or to a digest. The moving tags (`opentofu`, `terraform`) are for trying things out, never for anything you keep.

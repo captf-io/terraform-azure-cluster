@@ -33,16 +33,16 @@ The CAPTF Azure cluster module is the Terraform/OpenTofu root module behind
 cluster-wide substrate of a Kubernetes cluster on Azure virtual machines. It
 implements the
 [`v1alpha1` cluster role](https://captf.io/docs/module-author/contract/v1alpha1/cluster.html).
-The images are built from
-[azure-modules](https://github.com/captf-io/azure-modules) and published as
-`ghcr.io/captf-io/azure-cluster`.
+The images are built by
+[module-images](https://github.com/captf-io/module-images) from this repository's releases and published as
+`ghcr.io/captf-io/module-images/azure-cluster`.
 
 The reasons behind every choice are in
 [DESIGN.md](https://github.com/captf-io/terraform-azure-cluster/blob/main/DESIGN.md).
 
 ## Using it
 
-CAPTF runs this module from the module image `ghcr.io/captf-io/azure-cluster`:
+CAPTF runs this module from the module image `ghcr.io/captf-io/module-images/azure-cluster`:
 set the image on a `TerraformCluster`'s `spec.source.image`, and the controller
 renders every input. The module is also published to the Terraform Registry as
 `captf-io/cluster/azure` and can be called directly:
@@ -361,7 +361,7 @@ gate. Targets (`make help` lists them):
 - `clean`: remove `build/`.
 
 This repository holds the code only; it builds no images. The module images
-are built from it by [azure-modules](https://github.com/captf-io/azure-modules).
+are built from its releases by [module-images](https://github.com/captf-io/module-images).
 
 <br>
 <p align="center">
