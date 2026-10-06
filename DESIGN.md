@@ -137,13 +137,20 @@ identify control plane and workers. Rules:
   (140) too (required when public; must include the NAT Gateway's IPs), and a
   final deny of `VirtualNetwork` inbound at 4096 that overrides Azure's
   AllowVnetInBound; AllowAzureLoadBalancerInBound stays for probes.
-- workers: no final deny. cloud-provider-azure adds no NSG rule for an
+- workers: the kubelet ports (10250, 10255/tcp) denied from `VirtualNetwork`
+  at 150, after the intra-cluster allow, so only the nodes reach the kubelet
+  API (review finding: with AllowVnetInBound alone, anything in a brought or
+  peered network could). No final deny of the whole network. cloud-provider-azure adds no NSG rule for an
   internal Service load balancer without source ranges and relies on
   AllowVnetInBound (`pkg/provider/loadbalancer/accesscontrol.go`,
   `IsAllowFromInternet` and `DenyAllExceptSourceRanges`: "By default, NSG
   allow traffic from the VNet"), so a deny there would cut internal
   LoadBalancer Services off from the network. The first draft denied the
-  network on both roles.
+  network on both roles. A review asked for the full deny again; it stays
+  rejected for the reason above (the internal Service rule is not
+  port-scoped: with floating IP the destination port is the Service's own,
+  so no fixed allow list covers it) and the kubelet is the part of the
+  node's surface that nothing legitimate outside the cluster needs.
 
 Custom priorities stay within Azure's 100-4096 and below 500, where the
 CCM's rules start.
@@ -358,13 +365,25 @@ location must not fail the destroy's refresh.
 **12.** RKE2's apiserver answering `/readyz` with 401 or 403 when anonymous
 auth is off, and the hairpin's 9345 DNAT being needed at all.
 
+**16.** The kubelet deny and CNIs that give pods addresses from the node
+subnet (Azure CNI without an overlay): a pod's source address is then not a
+member of the node application security group (association is per NIC
+IP configuration and the module associates the NIC), so a pod scraping the
+kubelet on another node (metrics-server, Prometheus) would be denied. The
+same gap already affects intra-cluster traffic on the control plane. Overlay
+CNIs (Calico, Cilium, Flannel, the CAPZ default) source-NAT to the node
+address and are unaffected. Nothing here was applied to Azure.
+
+**17.** Whether any component outside the nodes reaches the worker kubelet
+on 10250 or 10255 (a monitoring agent in a peered network). None is known.
+
 The numbers are those of the other terraform-azure-* repositories; the gaps are
 items of the other roles.
 
 ## Rejected alternatives
 
 - Bring-your-own resource group (breaks least privilege and attribution).
-- A deny of the virtual network on worker NSGs (breaks internal Service
-  load balancers, decision 3).
+- A deny of the whole virtual network on worker NSGs (breaks internal
+  Service load balancers, decision 3); only the kubelet ports are denied.
 - A generated or "sealed" SSH key (state secret, or trust in an unprovable
   claim).

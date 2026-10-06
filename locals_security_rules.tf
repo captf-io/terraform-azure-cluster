@@ -17,10 +17,10 @@
 # ssh_allowed_cidrs. Nodes talk freely to each other (identified by
 # application security groups). Control-plane nodes take the API server ports from the virtual
 # network and the allowed CIDRs, and nothing else from the virtual network.
-# Workers keep Azure's default AllowVnetInBound: cloud-provider-azure adds no
-# rule for an internal Service load balancer and relies on it
-# (pkg/provider/loadbalancer/accesscontrol.go). Priorities stay below 500,
-# where the cloud controller manager's Service rules start.
+# Workers keep Azure's default AllowVnetInBound, apart from the kubelet ports:
+# cloud-provider-azure adds no rule for an internal Service load balancer and
+# relies on it (pkg/provider/loadbalancer/accesscontrol.go). Priorities stay
+# below 500, where the cloud controller manager's Service rules start.
 locals {
   api_server_ports = concat([local.api_backend_port], local.rke2 ? [local.rke2_supervisor_port] : [])
 
@@ -108,6 +108,24 @@ locals {
           source_application_security_group_ids = null
         }
       } : k => r if length(var.api_allowed_cidrs) > 0
+    },
+    {
+      # The kubelet API runs commands in containers and serves logs; only the
+      # nodes (allow-cluster-inbound, above) have a reason to reach it. The
+      # rest of the virtual network stays open on workers, see the header.
+      "worker/deny-kubelet-from-virtual-network" = {
+        role                                  = "worker"
+        name                                  = "deny-kubelet-from-virtual-network"
+        description                           = "Kubelet ports from the rest of the virtual network."
+        priority                              = 150
+        access                                = "Deny"
+        protocol                              = "Tcp"
+        destination_port_range                = null
+        destination_port_ranges               = ["10250", "10255"]
+        source_address_prefix                 = "VirtualNetwork"
+        source_address_prefixes               = null
+        source_application_security_group_ids = null
+      }
     },
     {
       # Overrides Azure's default AllowVnetInBound (priority 65000);

@@ -79,7 +79,7 @@ creates. The network is yours (see Prerequisites).
 | `azurerm_user_assigned_identity.node_identities` | 0-2 | Managed identities of control-plane and worker nodes, unless you bring them |
 | `azurerm_role_assignment.node_role_assignments` | 0+ | Contributor on the group and Network Contributor on the node subnets for the control-plane identity; AcrPull on `container_registry_ids` for both |
 | `azurerm_network_security_group.node_security_groups` | 2 | One per role, attached to each node's NIC |
-| `azurerm_network_security_rule.node_security_rules` | 6-9 | SSH denied (or allowed from `ssh_allowed_cidrs`) on both roles; intra-cluster traffic; the API server ports; a final deny of the virtual network for the control plane |
+| `azurerm_network_security_rule.node_security_rules` | 7-10 | SSH denied (or allowed from `ssh_allowed_cidrs`) on both roles; intra-cluster traffic; the API server ports; a final deny of the virtual network for the control plane; the kubelet ports denied from the rest of the virtual network on workers |
 | `azurerm_application_security_group.node_application_security_groups` | 2 | Name control-plane and worker NICs in the rules |
 | `azurerm_availability_set.control_plane_availability_set` | 0-1 | Control-plane fault domains in a region without availability zones |
 | `azurerm_public_ip.api_public_ip` | 0-1 | Static Standard public IP of a public API endpoint (`api_load_balancer_public`) |
@@ -300,9 +300,13 @@ to your bootstrap configuration.
   LoadBalancer Services and PersistentVolumes first, or remove what is left
   by hand.
 - Control-plane nodes accept from the virtual network only the API server
-  ports and intra-cluster traffic. Workers keep Azure's default
-  AllowVnetInBound, because cloud-provider-azure relies on it for internal
-  Service load balancers. SSH is denied on both unless
+  ports and intra-cluster traffic. Workers deny the kubelet ports (10250,
+  10255) from the rest of the virtual network, but otherwise keep Azure's
+  default AllowVnetInBound, because cloud-provider-azure relies on it for
+  internal Service load balancers: NodePorts and Service ports on workers
+  are reachable from the virtual network and networks peered or connected
+  to it, so put a network policy or your own NSG rule in front of anything
+  that must not be. SSH is denied on both unless
   `ssh_allowed_cidrs` allows it.
 
 ## Exceptions

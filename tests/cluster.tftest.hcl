@@ -214,13 +214,18 @@ run "happy_path" {
       "control-plane/deny-virtual-network-inbound",
       "control-plane/deny-ssh-inbound",
       "worker/allow-cluster-inbound",
+      "worker/deny-kubelet-from-virtual-network",
       "worker/deny-ssh-inbound",
     ])
-    error_message = "The default rules: no SSH and intra-cluster for both roles; API from the network and a final deny for the control plane."
+    error_message = "The default rules: no SSH and intra-cluster for both roles; API from the network and a final deny for the control plane; no kubelet from the network on workers."
   }
   assert {
     condition     = azurerm_network_security_rule.node_security_rules["worker/deny-ssh-inbound"].priority < azurerm_network_security_rule.node_security_rules["worker/allow-cluster-inbound"].priority && azurerm_network_security_rule.node_security_rules["worker/deny-ssh-inbound"].destination_port_range == "22" && azurerm_network_security_rule.node_security_rules["worker/deny-ssh-inbound"].source_address_prefix == "*"
     error_message = "SSH is denied from anywhere, ahead of the intra-cluster allow."
+  }
+  assert {
+    condition     = azurerm_network_security_rule.node_security_rules["worker/deny-kubelet-from-virtual-network"].priority > azurerm_network_security_rule.node_security_rules["worker/allow-cluster-inbound"].priority && azurerm_network_security_rule.node_security_rules["worker/deny-kubelet-from-virtual-network"].priority < 500 && azurerm_network_security_rule.node_security_rules["worker/deny-kubelet-from-virtual-network"].access == "Deny" && azurerm_network_security_rule.node_security_rules["worker/deny-kubelet-from-virtual-network"].destination_port_ranges == toset(["10250", "10255"]) && azurerm_network_security_rule.node_security_rules["worker/deny-kubelet-from-virtual-network"].source_address_prefix == "VirtualNetwork"
+    error_message = "Workers deny the kubelet ports from the virtual network, after the intra-cluster allow and below the cloud controller manager's priorities."
   }
   assert {
     condition     = jsonencode(terraform_data.api_endpoint_guard[0].input) == jsonencode({ port = 6443, private_ip_address = "10.0.0.100", public = false, subnet_id = lower(var.subnet_id) })
